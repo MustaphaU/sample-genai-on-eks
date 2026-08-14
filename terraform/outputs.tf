@@ -47,7 +47,7 @@ output "model_storage_policy_arn" {
 
 output "s3_inference_benchmarking_arn" {
   description = "ARN of the IAM role for inference benchmarking"
-  value = aws_iam_role.s3_inference_benchmarking.arn
+  value       = aws_iam_role.s3_inference_benchmarking.arn
 }
 
 ################################################################################
@@ -90,8 +90,8 @@ output "inference_perf_service_account_namespace" {
 
 output "service_account_inference_benchmarking" {
   description = "Name of the Kubernetes service account for inference perf"
-  value = "inference-perf-sa"
-} 
+  value       = "inference-perf-sa"
+}
 
 ################################################################################
 # EKS Pod Identity Association Outputs
@@ -119,12 +119,12 @@ output "s3_csi_pod_identity_association_id" {
 
 output "inference_perf_association_id" {
   description = "ID of the Pod Identity association for inference perf"
-  value = aws_eks_pod_identity_association.s3_inference_benchmarking.association_id
+  value       = aws_eks_pod_identity_association.s3_inference_benchmarking.association_id
 }
 
 output "inference_perf_association_arn" {
   description = "ARN of the Pod Identity association for inference perf"
-  value = aws_eks_pod_identity_association.s3_inference_benchmarking.association_arn
+  value       = aws_eks_pod_identity_association.s3_inference_benchmarking.association_arn
 }
 
 ################################################################################
@@ -290,6 +290,35 @@ output "port_forward_vllm_command" {
 }
 
 ################################################################################
+# Optional Module Outputs
+################################################################################
+
+output "rag_data_bucket_name" {
+  description = "Name of the S3 bucket containing RAG source documents, or null when RAG is disabled"
+  value       = var.enable_rag ? aws_s3_bucket.rag_data[0].bucket : null
+}
+
+output "rag_vector_bucket_name" {
+  description = "Name of the S3 vector bucket used by the RAG module, or null when RAG is disabled"
+  value       = var.enable_rag ? aws_s3vectors_vector_bucket.rag[0].vector_bucket_name : null
+}
+
+output "rag_vector_index_name" {
+  description = "Name of the S3 vector index used by the RAG module, or null when RAG is disabled"
+  value       = var.enable_rag ? aws_s3vectors_index.rag[0].index_name : null
+}
+
+output "rag_role_arn" {
+  description = "ARN of the IAM role used by RAG workloads, or null when RAG is disabled"
+  value       = var.enable_rag ? aws_iam_role.rag[0].arn : null
+}
+
+output "strands_ecr_repository_url" {
+  description = "URL of the Strands agent ECR repository, or null when Strands is disabled"
+  value       = var.enable_strands ? aws_ecr_repository.strands[0].repository_url : null
+}
+
+################################################################################
 # Region and Account Info
 ################################################################################
 
@@ -312,6 +341,6 @@ output "deployment_summary" {
   value = {
     cluster_name = module.eks.cluster_name
     s3_bucket    = aws_s3_bucket.model_storage.bucket
-    region = local.region
+    region       = local.region
   }
 }

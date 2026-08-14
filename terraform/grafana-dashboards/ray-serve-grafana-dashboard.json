@@ -14,7 +14,7 @@
   },
   "editable": true,
   "gnetId": null,
-  "graphTooltip": 0,
+  "graphTooltip": 1,
   "iteration": 1667344411089,
   "links": [],
   "panels": [
@@ -23,32 +23,29 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "${datasource}",
       "description": "Aggregated utilization of all physical resources (CPU, GPU, memory, disk, or etc.) across the cluster. Ignores application variable.",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
-      "fill": 0,
-      "fillGradient": 0,
       "gridPos": {
         "x": 0,
         "y": 0,
         "w": 12,
         "h": 8
       },
+      "fill": 0,
+      "fillGradient": 0,
       "hiddenSeries": false,
       "id": 5,
       "legend": {
         "alignAsTable": true,
-        "avg": false,
+        "avg": true,
         "current": true,
         "hideEmpty": false,
         "hideZero": true,
-        "max": false,
+        "max": true,
         "min": false,
         "rightSide": false,
         "show": true,
@@ -59,7 +56,7 @@
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "null",
+      "nullPointMode": null,
       "options": {
         "alertThreshold": true
       },
@@ -97,7 +94,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "avg(ray_node_cpu_utilization{})",
+          "expr": "avg(ray_node_cpu_utilization{ray_io_cluster=~\"$Cluster\"})",
           "interval": "",
           "legendFormat": "CPU (physical)",
           "queryType": "randomWalk",
@@ -105,7 +102,7 @@
         },
         {
           "exemplar": true,
-          "expr": "avg(ray_node_gpus_utilization{})",
+          "expr": "sum(ray_node_gpus_utilization{ray_io_cluster=~\"$Cluster\"}) / on() (sum(autoscaler_cluster_resources{resource='GPU',ray_io_cluster=~\"$Cluster\"}) or vector(0))",
           "interval": "",
           "legendFormat": "GPU (physical)",
           "queryType": "randomWalk",
@@ -113,7 +110,7 @@
         },
         {
           "exemplar": true,
-          "expr": "sum(ray_node_mem_used{}) / on() (sum(ray_node_mem_total{})) * 100",
+          "expr": "sum(ray_node_mem_used{ray_io_cluster=~\"$Cluster\"}) / on() (sum(ray_node_mem_total{ray_io_cluster=~\"$Cluster\"})) * 100",
           "interval": "",
           "legendFormat": "Memory (RAM)",
           "queryType": "randomWalk",
@@ -121,7 +118,7 @@
         },
         {
           "exemplar": true,
-          "expr": "sum(ray_node_gram_used{}) / on() (sum(ray_node_gram_available{}) + sum(ray_node_gram_used{})) * 100",
+          "expr": "sum(ray_node_gram_used{ray_io_cluster=~\"$Cluster\"}) / on() (sum(ray_node_gram_available{ray_io_cluster=~\"$Cluster\"}) + sum(ray_node_gram_used{ray_io_cluster=~\"$Cluster\"})) * 100",
           "interval": "",
           "legendFormat": "GRAM",
           "queryType": "randomWalk",
@@ -129,7 +126,7 @@
         },
         {
           "exemplar": true,
-          "expr": "sum(ray_object_store_memory{}) / on() sum(ray_resources{Name=\"object_store_memory\",}) * 100",
+          "expr": "sum(ray_object_store_memory{ray_io_cluster=~\"$Cluster\"}) / on() sum(ray_resources{Name=\"object_store_memory\",ray_io_cluster=~\"$Cluster\"}) * 100",
           "interval": "",
           "legendFormat": "Object Store Memory",
           "queryType": "randomWalk",
@@ -137,7 +134,7 @@
         },
         {
           "exemplar": true,
-          "expr": "sum(ray_node_disk_usage{}) / on() (sum(ray_node_disk_free{}) + sum(ray_node_disk_usage{})) * 100",
+          "expr": "sum(ray_node_disk_usage{ray_io_cluster=~\"$Cluster\"}) / on() (sum(ray_node_disk_free{ray_io_cluster=~\"$Cluster\"}) + sum(ray_node_disk_usage{ray_io_cluster=~\"$Cluster\"})) * 100",
           "interval": "",
           "legendFormat": "Disk",
           "queryType": "randomWalk",
@@ -192,32 +189,29 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "${datasource}",
       "description": "QPS for each selected application.",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
-      "fill": 10,
-      "fillGradient": 0,
       "gridPos": {
         "x": 12,
         "y": 0,
         "w": 12,
         "h": 8
       },
+      "fill": 10,
+      "fillGradient": 0,
       "hiddenSeries": false,
       "id": 7,
       "legend": {
         "alignAsTable": true,
-        "avg": false,
+        "avg": true,
         "current": true,
         "hideEmpty": false,
         "hideZero": true,
-        "max": false,
+        "max": true,
         "min": false,
         "rightSide": false,
         "show": true,
@@ -228,7 +222,7 @@
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "null",
+      "nullPointMode": "connected",
       "options": {
         "alertThreshold": true
       },
@@ -266,7 +260,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(ray_serve_num_http_requests_total{application=~\"$Application\",application!~\"\",route=~\"$HTTP_Route\",route!~\"/-/.*\",}[5m])) by (application, route)",
+          "expr": "sum(rate(ray_serve_num_http_requests_total{application=~\"$Application\",application!~\"\",route=~\"$HTTP_Route\",route!~\"/-/.*\",ray_io_cluster=~\"$Cluster\"}[5m])) by (application, route)",
           "interval": "",
           "legendFormat": "{{application, route}}",
           "queryType": "randomWalk",
@@ -274,7 +268,7 @@
         },
         {
           "exemplar": true,
-          "expr": "sum(rate(ray_serve_num_grpc_requests_total{application=~\"$Application\",application!~\"\",method=~\"$gRPC_Method\",}[5m])) by (application, method)",
+          "expr": "sum(rate(ray_serve_num_grpc_requests_total{application=~\"$Application\",application!~\"\",method=~\"$gRPC_Method\",ray_io_cluster=~\"$Cluster\"}[5m])) by (application, method)",
           "interval": "",
           "legendFormat": "{{application, method}}",
           "queryType": "randomWalk",
@@ -329,32 +323,29 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "${datasource}",
       "description": "Error QPS for each selected application.",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
-      "fill": 10,
-      "fillGradient": 0,
       "gridPos": {
         "x": 0,
         "y": 1,
         "w": 12,
         "h": 8
       },
+      "fill": 10,
+      "fillGradient": 0,
       "hiddenSeries": false,
       "id": 8,
       "legend": {
         "alignAsTable": true,
-        "avg": false,
+        "avg": true,
         "current": true,
         "hideEmpty": false,
         "hideZero": true,
-        "max": false,
+        "max": true,
         "min": false,
         "rightSide": false,
         "show": true,
@@ -365,7 +356,7 @@
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "null",
+      "nullPointMode": "connected",
       "options": {
         "alertThreshold": true
       },
@@ -403,7 +394,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(ray_serve_num_http_error_requests_total{application=~\"$Application\",application!~\"\",route=~\"$HTTP_Route\",route!~\"/-/.*\",}[5m])) by (application, route)",
+          "expr": "sum(rate(ray_serve_num_http_error_requests_total{application=~\"$Application\",application!~\"\",route=~\"$HTTP_Route\",route!~\"/-/.*\",ray_io_cluster=~\"$Cluster\"}[5m])) by (application, route)",
           "interval": "",
           "legendFormat": "{{application, route}}",
           "queryType": "randomWalk",
@@ -411,7 +402,7 @@
         },
         {
           "exemplar": true,
-          "expr": "sum(rate(ray_serve_num_grpc_error_requests_total{application=~\"$Application\",application!~\"\",method=~\"$gRPC_Method\",}[5m])) by (application, method)",
+          "expr": "sum(rate(ray_serve_num_grpc_error_requests_total{application=~\"$Application\",application!~\"\",method=~\"$gRPC_Method\",ray_io_cluster=~\"$Cluster\"}[5m])) by (application, method)",
           "interval": "",
           "legendFormat": "{{application, method}}",
           "queryType": "randomWalk",
@@ -466,32 +457,29 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "${datasource}",
       "description": "Error QPS for each selected application.",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
-      "fill": 10,
-      "fillGradient": 0,
       "gridPos": {
         "x": 12,
         "y": 1,
         "w": 12,
         "h": 8
       },
+      "fill": 10,
+      "fillGradient": 0,
       "hiddenSeries": false,
       "id": 17,
       "legend": {
         "alignAsTable": true,
-        "avg": false,
+        "avg": true,
         "current": true,
         "hideEmpty": false,
         "hideZero": true,
-        "max": false,
+        "max": true,
         "min": false,
         "rightSide": false,
         "show": true,
@@ -502,7 +490,7 @@
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "null",
+      "nullPointMode": "connected",
       "options": {
         "alertThreshold": true
       },
@@ -540,7 +528,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(ray_serve_num_http_error_requests_total{application=~\"$Application\",application!~\"\",route=~\"$HTTP_Route\",route!~\"/-/.*\",}[5m])) by (application, route, error_code)",
+          "expr": "sum(rate(ray_serve_num_http_error_requests_total{application=~\"$Application\",application!~\"\",route=~\"$HTTP_Route\",route!~\"/-/.*\",ray_io_cluster=~\"$Cluster\"}[5m])) by (application, route, error_code)",
           "interval": "",
           "legendFormat": "{{application, route, error_code}}",
           "queryType": "randomWalk",
@@ -548,7 +536,7 @@
         },
         {
           "exemplar": true,
-          "expr": "sum(rate(ray_serve_num_grpc_error_requests_total{application=~\"$Application\",application!~\"\",method=~\"$gRPC_Method\",}[5m])) by (application, method, error_code)",
+          "expr": "sum(rate(ray_serve_num_grpc_error_requests_total{application=~\"$Application\",application!~\"\",method=~\"$gRPC_Method\",ray_io_cluster=~\"$Cluster\"}[5m])) by (application, method, error_code)",
           "interval": "",
           "legendFormat": "{{application, method, error_code}}",
           "queryType": "randomWalk",
@@ -603,32 +591,29 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "${datasource}",
       "description": "P50 latency for selected applications.",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
-      "fill": 0,
-      "fillGradient": 0,
       "gridPos": {
         "x": 0,
         "y": 2,
         "w": 8,
         "h": 8
       },
+      "fill": 0,
+      "fillGradient": 0,
       "hiddenSeries": false,
       "id": 12,
       "legend": {
         "alignAsTable": true,
-        "avg": false,
+        "avg": true,
         "current": true,
         "hideEmpty": false,
         "hideZero": true,
-        "max": false,
+        "max": true,
         "min": false,
         "rightSide": false,
         "show": true,
@@ -639,7 +624,7 @@
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "null",
+      "nullPointMode": null,
       "options": {
         "alertThreshold": true
       },
@@ -677,7 +662,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.5, sum(rate(ray_serve_http_request_latency_ms_bucket{application=~\"$Application\",application!~\"\",route=~\"$HTTP_Route\",route!~\"/-/.*\",}[5m])) by (application, route, le))",
+          "expr": "histogram_quantile(0.5, sum(rate(ray_serve_http_request_latency_ms_bucket{application=~\"$Application\",application!~\"\",route=~\"$HTTP_Route\",route!~\"/-/.*\",ray_io_cluster=~\"$Cluster\"}[5m])) by (application, route, le))",
           "interval": "",
           "legendFormat": "{{application, route}}",
           "queryType": "randomWalk",
@@ -685,7 +670,7 @@
         },
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.5, sum(rate(ray_serve_grpc_request_latency_ms_bucket{application=~\"$Application\",application!~\"\",method=~\"$gRPC_Method\",}[5m])) by (application, method, le))",
+          "expr": "histogram_quantile(0.5, sum(rate(ray_serve_grpc_request_latency_ms_bucket{application=~\"$Application\",application!~\"\",method=~\"$gRPC_Method\",ray_io_cluster=~\"$Cluster\"}[5m])) by (application, method, le))",
           "interval": "",
           "legendFormat": "{{application, method}}",
           "queryType": "randomWalk",
@@ -693,7 +678,7 @@
         },
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.5, sum(rate({__name__=~ \"ray_serve_(http|grpc)_request_latency_ms_bucket\",application=~\"$Application\",application!~\"\",}[5m])) by (le))",
+          "expr": "histogram_quantile(0.5, sum(rate({__name__=~ \"ray_serve_(http|grpc)_request_latency_ms_bucket\",application=~\"$Application\",application!~\"\",ray_io_cluster=~\"$Cluster\"}[5m])) by (le))",
           "interval": "",
           "legendFormat": "Total",
           "queryType": "randomWalk",
@@ -748,32 +733,29 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "${datasource}",
       "description": "P90 latency for selected applications.",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
-      "fill": 0,
-      "fillGradient": 0,
       "gridPos": {
         "x": 8,
         "y": 2,
         "w": 8,
         "h": 8
       },
+      "fill": 0,
+      "fillGradient": 0,
       "hiddenSeries": false,
       "id": 15,
       "legend": {
         "alignAsTable": true,
-        "avg": false,
+        "avg": true,
         "current": true,
         "hideEmpty": false,
         "hideZero": true,
-        "max": false,
+        "max": true,
         "min": false,
         "rightSide": false,
         "show": true,
@@ -784,7 +766,7 @@
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "null",
+      "nullPointMode": null,
       "options": {
         "alertThreshold": true
       },
@@ -822,7 +804,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.9, sum(rate(ray_serve_http_request_latency_ms_bucket{application=~\"$Application\",application!~\"\",route=~\"$HTTP_Route\",route!~\"/-/.*\",}[5m])) by (application, route, le))",
+          "expr": "histogram_quantile(0.9, sum(rate(ray_serve_http_request_latency_ms_bucket{application=~\"$Application\",application!~\"\",route=~\"$HTTP_Route\",route!~\"/-/.*\",ray_io_cluster=~\"$Cluster\"}[5m])) by (application, route, le))",
           "interval": "",
           "legendFormat": "{{application, route}}",
           "queryType": "randomWalk",
@@ -830,7 +812,7 @@
         },
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.9, sum(rate(ray_serve_grpc_request_latency_ms_bucket{application=~\"$Application\",application!~\"\",method=~\"$gRPC_Method\",}[5m])) by (application, method, le))",
+          "expr": "histogram_quantile(0.9, sum(rate(ray_serve_grpc_request_latency_ms_bucket{application=~\"$Application\",application!~\"\",method=~\"$gRPC_Method\",ray_io_cluster=~\"$Cluster\"}[5m])) by (application, method, le))",
           "interval": "",
           "legendFormat": "{{application, method}}",
           "queryType": "randomWalk",
@@ -838,7 +820,7 @@
         },
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.9, sum(rate({__name__=~ \"ray_serve_(http|grpc)_request_latency_ms_bucket|ray_serve_grpc_request_latency_ms_bucket\",application=~\"$Application\",application!~\"\",}[5m])) by (le))",
+          "expr": "histogram_quantile(0.9, sum(rate({__name__=~ \"ray_serve_(http|grpc)_request_latency_ms_bucket|ray_serve_grpc_request_latency_ms_bucket\",application=~\"$Application\",application!~\"\",ray_io_cluster=~\"$Cluster\"}[5m])) by (le))",
           "interval": "",
           "legendFormat": "Total",
           "queryType": "randomWalk",
@@ -893,32 +875,29 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "${datasource}",
       "description": "P99 latency for selected applications.",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
-      "fill": 0,
-      "fillGradient": 0,
       "gridPos": {
         "x": 16,
         "y": 2,
         "w": 8,
         "h": 8
       },
+      "fill": 0,
+      "fillGradient": 0,
       "hiddenSeries": false,
       "id": 16,
       "legend": {
         "alignAsTable": true,
-        "avg": false,
+        "avg": true,
         "current": true,
         "hideEmpty": false,
         "hideZero": true,
-        "max": false,
+        "max": true,
         "min": false,
         "rightSide": false,
         "show": true,
@@ -929,7 +908,7 @@
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "null",
+      "nullPointMode": null,
       "options": {
         "alertThreshold": true
       },
@@ -967,7 +946,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum(rate(ray_serve_http_request_latency_ms_bucket{application=~\"$Application\",application!~\"\",route=~\"$HTTP_Route\",route!~\"/-/.*\",}[5m])) by (application, route, le))",
+          "expr": "histogram_quantile(0.99, sum(rate(ray_serve_http_request_latency_ms_bucket{application=~\"$Application\",application!~\"\",route=~\"$HTTP_Route\",route!~\"/-/.*\",ray_io_cluster=~\"$Cluster\"}[5m])) by (application, route, le))",
           "interval": "",
           "legendFormat": "{{application, route}}",
           "queryType": "randomWalk",
@@ -975,7 +954,7 @@
         },
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum(rate(ray_serve_grpc_request_latency_ms_bucket{application=~\"$Application\",application!~\"\",method=~\"$gRPC_Method\",}[5m])) by (application, method, le))",
+          "expr": "histogram_quantile(0.99, sum(rate(ray_serve_grpc_request_latency_ms_bucket{application=~\"$Application\",application!~\"\",method=~\"$gRPC_Method\",ray_io_cluster=~\"$Cluster\"}[5m])) by (application, method, le))",
           "interval": "",
           "legendFormat": "{{application, method}}",
           "queryType": "randomWalk",
@@ -983,7 +962,7 @@
         },
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum(rate({__name__=~ \"ray_serve_(http|grpc)_request_latency_ms_bucket|ray_serve_grpc_request_latency_ms_bucket\",application=~\"$Application\",application!~\"\",}[5m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate({__name__=~ \"ray_serve_(http|grpc)_request_latency_ms_bucket|ray_serve_grpc_request_latency_ms_bucket\",application=~\"$Application\",application!~\"\",ray_io_cluster=~\"$Cluster\"}[5m])) by (le))",
           "interval": "",
           "legendFormat": "Total",
           "queryType": "randomWalk",
@@ -1038,32 +1017,29 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "${datasource}",
       "description": "Number of replicas per deployment. Ignores \"Application\" variable.",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
-      "fill": 10,
-      "fillGradient": 0,
       "gridPos": {
         "x": 0,
         "y": 3,
         "w": 8,
         "h": 8
       },
+      "fill": 10,
+      "fillGradient": 0,
       "hiddenSeries": false,
       "id": 2,
       "legend": {
         "alignAsTable": true,
-        "avg": false,
+        "avg": true,
         "current": true,
         "hideEmpty": false,
         "hideZero": true,
-        "max": false,
+        "max": true,
         "min": false,
         "rightSide": false,
         "show": true,
@@ -1074,7 +1050,7 @@
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "null",
+      "nullPointMode": "connected",
       "options": {
         "alertThreshold": true
       },
@@ -1112,7 +1088,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(ray_serve_deployment_replica_healthy{}) by (application, deployment)",
+          "expr": "sum(ray_serve_deployment_replica_healthy{ray_io_cluster=~\"$Cluster\"}) by (application, deployment)",
           "interval": "",
           "legendFormat": "{{application, deployment}}",
           "queryType": "randomWalk",
@@ -1167,32 +1143,29 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "${datasource}",
       "description": "QPS for each deployment.",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
-      "fill": 10,
-      "fillGradient": 0,
       "gridPos": {
         "x": 8,
         "y": 3,
         "w": 8,
         "h": 8
       },
+      "fill": 10,
+      "fillGradient": 0,
       "hiddenSeries": false,
       "id": 13,
       "legend": {
         "alignAsTable": true,
-        "avg": false,
+        "avg": true,
         "current": true,
         "hideEmpty": false,
         "hideZero": true,
-        "max": false,
+        "max": true,
         "min": false,
         "rightSide": false,
         "show": true,
@@ -1203,7 +1176,7 @@
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "null",
+      "nullPointMode": "connected",
       "options": {
         "alertThreshold": true
       },
@@ -1241,7 +1214,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(ray_serve_deployment_request_counter_total{application=~\"$Application\",application!~\"\",}[5m])) by (application, deployment)",
+          "expr": "sum(rate(ray_serve_deployment_request_counter_total{application=~\"$Application\",application!~\"\",ray_io_cluster=~\"$Cluster\"}[5m])) by (application, deployment)",
           "interval": "",
           "legendFormat": "{{application, deployment}}",
           "queryType": "randomWalk",
@@ -1296,32 +1269,29 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "${datasource}",
       "description": "Error QPS for each deplyoment.",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
-      "fill": 10,
-      "fillGradient": 0,
       "gridPos": {
         "x": 16,
         "y": 3,
         "w": 8,
         "h": 8
       },
+      "fill": 10,
+      "fillGradient": 0,
       "hiddenSeries": false,
       "id": 14,
       "legend": {
         "alignAsTable": true,
-        "avg": false,
+        "avg": true,
         "current": true,
         "hideEmpty": false,
         "hideZero": true,
-        "max": false,
+        "max": true,
         "min": false,
         "rightSide": false,
         "show": true,
@@ -1332,7 +1302,7 @@
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "null",
+      "nullPointMode": "connected",
       "options": {
         "alertThreshold": true
       },
@@ -1370,7 +1340,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(ray_serve_deployment_error_counter_total{application=~\"$Application\",application!~\"\",}[5m])) by (application, deployment)",
+          "expr": "sum(rate(ray_serve_deployment_error_counter_total{application=~\"$Application\",application!~\"\",ray_io_cluster=~\"$Cluster\"}[5m])) by (application, deployment)",
           "interval": "",
           "legendFormat": "{{application, deployment}}",
           "queryType": "randomWalk",
@@ -1425,32 +1395,29 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "${datasource}",
       "description": "P50 latency per deployment.",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
-      "fill": 0,
-      "fillGradient": 0,
       "gridPos": {
         "x": 0,
         "y": 4,
         "w": 8,
         "h": 8
       },
+      "fill": 0,
+      "fillGradient": 0,
       "hiddenSeries": false,
       "id": 9,
       "legend": {
         "alignAsTable": true,
-        "avg": false,
+        "avg": true,
         "current": true,
         "hideEmpty": false,
         "hideZero": true,
-        "max": false,
+        "max": true,
         "min": false,
         "rightSide": false,
         "show": true,
@@ -1461,7 +1428,7 @@
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "null",
+      "nullPointMode": null,
       "options": {
         "alertThreshold": true
       },
@@ -1499,7 +1466,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.5, sum(rate(ray_serve_deployment_processing_latency_ms_bucket{application=~\"$Application\",application!~\"\",}[5m])) by (application, deployment, le))",
+          "expr": "histogram_quantile(0.5, sum(rate(ray_serve_deployment_processing_latency_ms_bucket{application=~\"$Application\",application!~\"\",ray_io_cluster=~\"$Cluster\"}[5m])) by (application, deployment, le))",
           "interval": "",
           "legendFormat": "{{application, deployment}}",
           "queryType": "randomWalk",
@@ -1507,7 +1474,7 @@
         },
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.5, sum(rate(ray_serve_deployment_processing_latency_ms_bucket{application=~\"$Application\",application!~\"\",}[5m])) by (le))",
+          "expr": "histogram_quantile(0.5, sum(rate(ray_serve_deployment_processing_latency_ms_bucket{application=~\"$Application\",application!~\"\",ray_io_cluster=~\"$Cluster\"}[5m])) by (le))",
           "interval": "",
           "legendFormat": "Total",
           "queryType": "randomWalk",
@@ -1562,32 +1529,29 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "${datasource}",
       "description": "P90 latency per deployment.",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
-      "fill": 0,
-      "fillGradient": 0,
       "gridPos": {
         "x": 8,
         "y": 4,
         "w": 8,
         "h": 8
       },
+      "fill": 0,
+      "fillGradient": 0,
       "hiddenSeries": false,
       "id": 10,
       "legend": {
         "alignAsTable": true,
-        "avg": false,
+        "avg": true,
         "current": true,
         "hideEmpty": false,
         "hideZero": true,
-        "max": false,
+        "max": true,
         "min": false,
         "rightSide": false,
         "show": true,
@@ -1598,7 +1562,7 @@
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "null",
+      "nullPointMode": null,
       "options": {
         "alertThreshold": true
       },
@@ -1636,7 +1600,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.9, sum(rate(ray_serve_deployment_processing_latency_ms_bucket{application=~\"$Application\",application!~\"\",}[5m])) by (application, deployment, le))",
+          "expr": "histogram_quantile(0.9, sum(rate(ray_serve_deployment_processing_latency_ms_bucket{application=~\"$Application\",application!~\"\",ray_io_cluster=~\"$Cluster\"}[5m])) by (application, deployment, le))",
           "interval": "",
           "legendFormat": "{{application, deployment}}",
           "queryType": "randomWalk",
@@ -1644,7 +1608,7 @@
         },
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.9, sum(rate(ray_serve_deployment_processing_latency_ms_bucket{application=~\"$Application\",application!~\"\",}[5m])) by (le))",
+          "expr": "histogram_quantile(0.9, sum(rate(ray_serve_deployment_processing_latency_ms_bucket{application=~\"$Application\",application!~\"\",ray_io_cluster=~\"$Cluster\"}[5m])) by (le))",
           "interval": "",
           "legendFormat": "Total",
           "queryType": "randomWalk",
@@ -1699,32 +1663,29 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "${datasource}",
       "description": "P99 latency per deployment.",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
-      "fill": 0,
-      "fillGradient": 0,
       "gridPos": {
         "x": 16,
         "y": 4,
         "w": 8,
         "h": 8
       },
+      "fill": 0,
+      "fillGradient": 0,
       "hiddenSeries": false,
       "id": 11,
       "legend": {
         "alignAsTable": true,
-        "avg": false,
+        "avg": true,
         "current": true,
         "hideEmpty": false,
         "hideZero": true,
-        "max": false,
+        "max": true,
         "min": false,
         "rightSide": false,
         "show": true,
@@ -1735,7 +1696,7 @@
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "null",
+      "nullPointMode": null,
       "options": {
         "alertThreshold": true
       },
@@ -1773,7 +1734,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum(rate(ray_serve_deployment_processing_latency_ms_bucket{application=~\"$Application\",application!~\"\",}[5m])) by (application, deployment, le))",
+          "expr": "histogram_quantile(0.99, sum(rate(ray_serve_deployment_processing_latency_ms_bucket{application=~\"$Application\",application!~\"\",ray_io_cluster=~\"$Cluster\"}[5m])) by (application, deployment, le))",
           "interval": "",
           "legendFormat": "{{application, deployment}}",
           "queryType": "randomWalk",
@@ -1781,7 +1742,7 @@
         },
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.99, sum(rate(ray_serve_deployment_processing_latency_ms_bucket{application=~\"$Application\",application!~\"\",}[5m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(ray_serve_deployment_processing_latency_ms_bucket{application=~\"$Application\",application!~\"\",ray_io_cluster=~\"$Cluster\"}[5m])) by (le))",
           "interval": "",
           "legendFormat": "Total",
           "queryType": "randomWalk",
@@ -1836,32 +1797,29 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "${datasource}",
       "description": "Number of requests queued per deployment. Ignores \"Application\" variable.",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
-      "fill": 0,
-      "fillGradient": 0,
       "gridPos": {
         "x": 0,
         "y": 5,
         "w": 8,
         "h": 8
       },
+      "fill": 0,
+      "fillGradient": 0,
       "hiddenSeries": false,
       "id": 3,
       "legend": {
         "alignAsTable": true,
-        "avg": false,
+        "avg": true,
         "current": true,
         "hideEmpty": false,
         "hideZero": true,
-        "max": false,
+        "max": true,
         "min": false,
         "rightSide": false,
         "show": true,
@@ -1872,7 +1830,7 @@
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "null",
+      "nullPointMode": null,
       "options": {
         "alertThreshold": true
       },
@@ -1910,7 +1868,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(ray_serve_deployment_queued_queries{}) by (application, deployment)",
+          "expr": "sum(ray_serve_deployment_queued_queries{ray_io_cluster=~\"$Cluster\"}) by (application, deployment)",
           "interval": "",
           "legendFormat": "{{application, deployment}}",
           "queryType": "randomWalk",
@@ -1965,32 +1923,29 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "${datasource}",
       "description": "Number of nodes in this cluster. Ignores \"Application\" variable.",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
-      "fill": 10,
-      "fillGradient": 0,
       "gridPos": {
         "x": 8,
         "y": 5,
         "w": 8,
         "h": 8
       },
+      "fill": 10,
+      "fillGradient": 0,
       "hiddenSeries": false,
       "id": 4,
       "legend": {
         "alignAsTable": true,
-        "avg": false,
+        "avg": true,
         "current": true,
         "hideEmpty": false,
         "hideZero": true,
-        "max": false,
+        "max": true,
         "min": false,
         "rightSide": false,
         "show": true,
@@ -2001,7 +1956,7 @@
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "null",
+      "nullPointMode": "connected",
       "options": {
         "alertThreshold": true
       },
@@ -2039,7 +1994,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(autoscaler_active_nodes{}) by (NodeType)",
+          "expr": "sum(autoscaler_active_nodes{ray_io_cluster=~\"$Cluster\"}) by (NodeType)",
           "interval": "",
           "legendFormat": "Active Nodes: {{NodeType}}",
           "queryType": "randomWalk",
@@ -2047,7 +2002,7 @@
         },
         {
           "exemplar": true,
-          "expr": "sum(autoscaler_recently_failed_nodes{}) by (NodeType)",
+          "expr": "sum(autoscaler_recently_failed_nodes{ray_io_cluster=~\"$Cluster\"}) by (NodeType)",
           "interval": "",
           "legendFormat": "Failed Nodes: {{NodeType}}",
           "queryType": "randomWalk",
@@ -2055,7 +2010,7 @@
         },
         {
           "exemplar": true,
-          "expr": "sum(autoscaler_pending_nodes{}) by (NodeType)",
+          "expr": "sum(autoscaler_pending_nodes{ray_io_cluster=~\"$Cluster\"}) by (NodeType)",
           "interval": "",
           "legendFormat": "Pending Nodes: {{NodeType}}",
           "queryType": "randomWalk",
@@ -2110,32 +2065,29 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "${datasource}",
       "description": "Network speed per node. Ignores \"Application\" variable.",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "x": 16,
         "y": 5,
         "w": 8,
         "h": 8
       },
+      "fill": 1,
+      "fillGradient": 0,
       "hiddenSeries": false,
       "id": 6,
       "legend": {
         "alignAsTable": true,
-        "avg": false,
+        "avg": true,
         "current": true,
         "hideEmpty": false,
         "hideZero": true,
-        "max": false,
+        "max": true,
         "min": false,
         "rightSide": false,
         "show": true,
@@ -2146,7 +2098,7 @@
       },
       "lines": true,
       "linewidth": 2,
-      "nullPointMode": "null",
+      "nullPointMode": null,
       "options": {
         "alertThreshold": true
       },
@@ -2184,7 +2136,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(ray_node_network_receive_speed{}) by (instance)",
+          "expr": "sum(ray_node_network_receive_speed{ray_io_cluster=~\"$Cluster\"}) by (instance)",
           "interval": "",
           "legendFormat": "Recv: {{instance}}",
           "queryType": "randomWalk",
@@ -2192,7 +2144,7 @@
         },
         {
           "exemplar": true,
-          "expr": "sum(ray_node_network_send_speed{}) by (instance)",
+          "expr": "sum(ray_node_network_send_speed{ray_io_cluster=~\"$Cluster\"}) by (instance)",
           "interval": "",
           "legendFormat": "Send: {{instance}}",
           "queryType": "randomWalk",
@@ -2247,32 +2199,29 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "${datasource}",
       "description": "The number of ongoing requests in the HTTP Proxy.",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
-      "fill": 10,
-      "fillGradient": 0,
       "gridPos": {
         "x": 0,
         "y": 6,
         "w": 8,
         "h": 8
       },
+      "fill": 10,
+      "fillGradient": 0,
       "hiddenSeries": false,
       "id": 20,
       "legend": {
         "alignAsTable": true,
-        "avg": false,
+        "avg": true,
         "current": true,
         "hideEmpty": false,
         "hideZero": true,
-        "max": false,
+        "max": true,
         "min": false,
         "rightSide": false,
         "show": true,
@@ -2283,7 +2232,7 @@
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "null",
+      "nullPointMode": "connected",
       "options": {
         "alertThreshold": true
       },
@@ -2321,7 +2270,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "ray_serve_num_ongoing_http_requests{}",
+          "expr": "ray_serve_num_ongoing_http_requests{ray_io_cluster=~\"$Cluster\"}",
           "interval": "",
           "legendFormat": "Ongoing HTTP Requests",
           "queryType": "randomWalk",
@@ -2376,32 +2325,29 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "${datasource}",
       "description": "The number of ongoing requests in the gRPC Proxy.",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
-      "fill": 10,
-      "fillGradient": 0,
       "gridPos": {
         "x": 8,
         "y": 6,
         "w": 8,
         "h": 8
       },
+      "fill": 10,
+      "fillGradient": 0,
       "hiddenSeries": false,
       "id": 21,
       "legend": {
         "alignAsTable": true,
-        "avg": false,
+        "avg": true,
         "current": true,
         "hideEmpty": false,
         "hideZero": true,
-        "max": false,
+        "max": true,
         "min": false,
         "rightSide": false,
         "show": true,
@@ -2412,7 +2358,7 @@
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "null",
+      "nullPointMode": "connected",
       "options": {
         "alertThreshold": true
       },
@@ -2450,7 +2396,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "ray_serve_num_ongoing_grpc_requests{}",
+          "expr": "ray_serve_num_ongoing_grpc_requests{ray_io_cluster=~\"$Cluster\"}",
           "interval": "",
           "legendFormat": "Ongoing gRPC Requests",
           "queryType": "randomWalk",
@@ -2505,32 +2451,29 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "${datasource}",
       "description": "The number of request scheduling tasks in the router.",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
-      "fill": 10,
-      "fillGradient": 0,
       "gridPos": {
         "x": 16,
         "y": 6,
         "w": 8,
         "h": 8
       },
+      "fill": 10,
+      "fillGradient": 0,
       "hiddenSeries": false,
       "id": 22,
       "legend": {
         "alignAsTable": true,
-        "avg": false,
+        "avg": true,
         "current": true,
         "hideEmpty": false,
         "hideZero": true,
-        "max": false,
+        "max": true,
         "min": false,
         "rightSide": false,
         "show": true,
@@ -2541,7 +2484,7 @@
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "null",
+      "nullPointMode": "connected",
       "options": {
         "alertThreshold": true
       },
@@ -2579,7 +2522,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "ray_serve_num_scheduling_tasks{}",
+          "expr": "ray_serve_num_scheduling_tasks{ray_io_cluster=~\"$Cluster\"}",
           "interval": "",
           "legendFormat": "Scheduling Tasks",
           "queryType": "randomWalk",
@@ -2634,32 +2577,29 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "${datasource}",
       "description": "The number of request scheduling tasks in the router that are undergoing backoff.",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
-      "fill": 10,
-      "fillGradient": 0,
       "gridPos": {
         "x": 0,
         "y": 7,
         "w": 8,
         "h": 8
       },
+      "fill": 10,
+      "fillGradient": 0,
       "hiddenSeries": false,
       "id": 23,
       "legend": {
         "alignAsTable": true,
-        "avg": false,
+        "avg": true,
         "current": true,
         "hideEmpty": false,
         "hideZero": true,
-        "max": false,
+        "max": true,
         "min": false,
         "rightSide": false,
         "show": true,
@@ -2670,7 +2610,7 @@
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "null",
+      "nullPointMode": "connected",
       "options": {
         "alertThreshold": true
       },
@@ -2708,7 +2648,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "ray_serve_num_scheduling_tasks_in_backoff{}",
+          "expr": "ray_serve_num_scheduling_tasks_in_backoff{ray_io_cluster=~\"$Cluster\"}",
           "interval": "",
           "legendFormat": "Scheduling Tasks in Backoff",
           "queryType": "randomWalk",
@@ -2763,32 +2703,29 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "${datasource}",
       "description": "The duration of the last control loop.",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
-      "fill": 10,
-      "fillGradient": 0,
       "gridPos": {
         "x": 8,
         "y": 7,
         "w": 8,
         "h": 8
       },
+      "fill": 10,
+      "fillGradient": 0,
       "hiddenSeries": false,
       "id": 24,
       "legend": {
         "alignAsTable": true,
-        "avg": false,
+        "avg": true,
         "current": true,
         "hideEmpty": false,
         "hideZero": true,
-        "max": false,
+        "max": true,
         "min": false,
         "rightSide": false,
         "show": true,
@@ -2799,7 +2736,7 @@
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "null",
+      "nullPointMode": "connected",
       "options": {
         "alertThreshold": true
       },
@@ -2837,7 +2774,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "ray_serve_controller_control_loop_duration_s{}",
+          "expr": "ray_serve_controller_control_loop_duration_s{ray_io_cluster=~\"$Cluster\"}",
           "interval": "",
           "legendFormat": "Control Loop Duration",
           "queryType": "randomWalk",
@@ -2892,32 +2829,29 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "${datasource}",
       "description": "The number of control loops performed by the controller. Increases monotonically over the controller's lifetime.",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
-      "fill": 10,
-      "fillGradient": 0,
       "gridPos": {
         "x": 16,
         "y": 7,
         "w": 8,
         "h": 8
       },
+      "fill": 10,
+      "fillGradient": 0,
       "hiddenSeries": false,
       "id": 25,
       "legend": {
         "alignAsTable": true,
-        "avg": false,
+        "avg": true,
         "current": true,
         "hideEmpty": false,
         "hideZero": true,
-        "max": false,
+        "max": true,
         "min": false,
         "rightSide": false,
         "show": true,
@@ -2928,7 +2862,7 @@
       },
       "lines": true,
       "linewidth": 1,
-      "nullPointMode": "null",
+      "nullPointMode": "connected",
       "options": {
         "alertThreshold": true
       },
@@ -2966,7 +2900,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "ray_serve_controller_num_control_loops{}",
+          "expr": "ray_serve_controller_num_control_loops{ray_io_cluster=~\"$Cluster\"}",
           "interval": "",
           "legendFormat": "Control Loops",
           "queryType": "randomWalk",
@@ -3020,7 +2954,7 @@
   "refresh": false,
   "schemaVersion": 27,
   "style": "dark",
-  "tags": ["rayVersion:2.49.0"],
+  "tags": ["rayVersion:2.53.0"],
   "templating": {
     "list": [
       {
@@ -3046,10 +2980,7 @@
           "text": ["All"],
           "value": ["$__all"]
         },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "prometheus"
-        },
+        "datasource": "${datasource}",
         "definition": "label_values(ray_serve_deployment_replica_healthy{}, application)",
         "description": null,
         "error": null,
@@ -3063,7 +2994,7 @@
           "query": "label_values(ray_serve_deployment_replica_healthy{}, application)",
           "refId": "Prometheus-Instance-Variable-Query"
         },
-        "refresh": 2,
+        "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,
@@ -3080,10 +3011,7 @@
           "text": ["All"],
           "value": ["$__all"]
         },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "prometheus"
-        },
+        "datasource": "${datasource}",
         "definition": "label_values(ray_serve_num_http_requests_total{}, route)",
         "description": null,
         "error": null,
@@ -3097,7 +3025,7 @@
           "query": "label_values(ray_serve_num_http_requests_total{}, route)",
           "refId": "Prometheus-Instance-Variable-Query"
         },
-        "refresh": 2,
+        "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,
@@ -3114,11 +3042,8 @@
           "text": ["All"],
           "value": ["$__all"]
         },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "prometheus"
-        },
-        "definition": "label_values(ray_serve_num_grpc_requests{}, method)",
+        "datasource": "${datasource}",
+        "definition": "label_values(ray_serve_num_grpc_requests_total{}, method)",
         "description": null,
         "error": null,
         "hide": 0,
@@ -3128,13 +3053,42 @@
         "name": "gRPC_Method",
         "options": [],
         "query": {
-          "query": "label_values(ray_serve_num_grpc_requests{}, method)",
+          "query": "label_values(ray_serve_num_grpc_requests_total{}, method)",
           "refId": "Prometheus-Instance-Variable-Query"
         },
-        "refresh": 2,
+        "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": false
+        },
+        "datasource": "${datasource}",
+        "definition": "label_values(ray_node_network_receive_speed{}, ray_io_cluster)",
+        "description": "Filter queries to specific Ray clusters for KubeRay. When ingesting metrics across multiple ray clusters, the ray_io_cluster label should be set per cluster. For KubeRay users, this is done automaticaly with Prometheus PodMonitor.",
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": null,
+        "multi": false,
+        "name": "Cluster",
+        "options": [],
+        "query": {
+          "query": "label_values(ray_node_network_receive_speed{}, ray_io_cluster)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 2,
         "tagValuesQuery": "",
         "tags": [],
         "tagsQuery": "",

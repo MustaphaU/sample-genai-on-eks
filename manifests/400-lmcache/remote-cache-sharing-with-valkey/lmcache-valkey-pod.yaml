@@ -16,7 +16,7 @@ spec:
     karpenter.sh/nodepool: gpu
   containers:
   - name: vllm-server
-    image: 763104351884.dkr.ecr.us-east-1.amazonaws.com/vllm:0.15.1-gpu-py312-cu129-ubuntu22.04-ec2-v1.1-soci
+    image: public.ecr.aws/deep-learning-containers/vllm:0.21.0-gpu-py312-cu130-ubuntu22.04-ec2-v1.0-soci
     imagePullPolicy: IfNotPresent
     command: ["/bin/bash", "-c"]
     args:
@@ -28,10 +28,10 @@ spec:
       python3 -m vllm.entrypoints.openai.api_server \
         --port=8080 \
         --model=s3://${S3_BUCKET_NAME}/Ministral-3-8B-Instruct-2512/ \
-        --served-model-name=ministral-3-8b-instruct-2512 \
+        --served-model-name=ministral \
         --load-format=runai_streamer \
         --model-loader-extra-config='{"concurrency":16}' \
-        --tokenizer_mode=auto \
+        --tokenizer_mode=mistral \
         --trust-remote-code \
         --gpu_memory_utilization=0.90 \
         --max-model-len=8192 \
@@ -40,7 +40,6 @@ spec:
         --max-num-seqs=256 \
         --block-size=16 \
         --enforce-eager \
-        --swap-space=16 \
         --disable-custom-all-reduce \
         --config-format=mistral \
         --enable-auto-tool-choice \
@@ -59,7 +58,7 @@ spec:
     - name: LMCACHE_LOCAL_CPU
       value: "True"
     - name: LMCACHE_MAX_LOCAL_CPU_SIZE
-      value: "12.0"
+      value: "4.0"
     # L2: Remote Valkey cache (ElastiCache Serverless)
     - name: LMCACHE_REMOTE_URL
       value: "rediss://${VALKEY_ENDPOINT}:6379"
@@ -77,12 +76,12 @@ spec:
       mountPath: /app
     resources:
       requests:
-        cpu: 6
-        memory: 32Gi
+        cpu: 2
+        memory: 20Gi
         nvidia.com/gpu: 1
       limits:
-        cpu: 6
-        memory: 32Gi
+        cpu: 4
+        memory: 28Gi
         nvidia.com/gpu: 1
     # startupProbe gates the other probes — readiness/liveness only start once
     # this succeeds. Allows up to 5 minutes for slow startup (image pull,

@@ -3,7 +3,7 @@ benchmark:
   scenario: baseline
   target:
     serverType: vllm
-    modelName: "s3://${S3_BUCKET_NAME}/Ministral-3-8B-Instruct-2512/"
+    modelName: "ministral"
     baseUrl: "http://vllm-serve-svc.default.svc.cluster.local:8000"
     tokenizerPath: "mistralai/Mistral-Nemo-Instruct-2407"
     ignoreEos: true

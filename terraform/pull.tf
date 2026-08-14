@@ -32,7 +32,7 @@ resource "kubectl_manifest" "job_model_download" {
       namespace: default
     spec:
       ttlSecondsAfterFinished: 604800  # Keep completed pods for 7 days
-      backoffLimit: 10
+      backoffLimit: 3
       activeDeadlineSeconds: 3600  # 1 hour timeout
       completionMode: NonIndexed
       completions: 1
@@ -40,7 +40,7 @@ resource "kubectl_manifest" "job_model_download" {
         spec:
           serviceAccountName: ${kubectl_manifest.model_storage_service_account.name}
           restartPolicy: Never
-          containers:
+          initContainers:
             - name: validate-pod-identity
               image: public.ecr.aws/aws-cli/aws-cli:latest
               command: ['/bin/sh', '-c']
@@ -48,20 +48,32 @@ resource "kubectl_manifest" "job_model_download" {
                 - |
                   set -e
                   
-                  echo 'Checking Pod Identity...'
-                  EXPECTED_ROLE="genai-model-storage-role"
-                  CURRENT_ROLE=$(aws sts get-caller-identity --query 'Arn' --output text | cut -d'/' -f2 2>/dev/null || echo "unknown")
+                  echo 'Waiting for Pod Identity credentials...'
+                  MAX_RETRIES=60
+                  RETRY_COUNT=0
                   
-                  echo "Expected role: $EXPECTED_ROLE"
-                  echo "Current role: $CURRENT_ROLE"
+                  while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+                    if CURRENT_ROLE=$(aws sts get-caller-identity --query 'Arn' --output text 2>/dev/null); then
+                      ROLE_NAME=$(echo "$CURRENT_ROLE" | cut -d'/' -f2)
+                      EXPECTED_ROLE="genai-model-storage-role"
+                      
+                      echo "Expected role: $EXPECTED_ROLE"
+                      echo "Current role: $ROLE_NAME"
+                      
+                      if [ "$ROLE_NAME" = "$EXPECTED_ROLE" ]; then
+                        echo "Pod Identity verified successfully!"
+                        exit 0
+                      fi
+                    fi
+                    
+                    RETRY_COUNT=$((RETRY_COUNT + 1))
+                    echo "Retry $RETRY_COUNT/$MAX_RETRIES - waiting for Pod Identity..."
+                    sleep 2
+                  done
                   
-                  if [ "$CURRENT_ROLE" != "$EXPECTED_ROLE" ]; then
-                    echo "ERROR: Pod Identity not working. Using node role instead of Pod Identity role."
-                    echo "Pod will be recreated to retry Pod Identity association."
-                    exit 1
-                  fi
-                  
-                  echo "Pod Identity verified successfully!"
+                  echo "ERROR: Pod Identity not available after $MAX_RETRIES attempts."
+                  exit 1
+          containers:
             - name: download
               image: python:3.11-slim
               env:

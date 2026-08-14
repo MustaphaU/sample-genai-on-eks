@@ -160,6 +160,10 @@ resource "kubernetes_namespace_v1" "monitoring" {
     }
   }
 
+  timeouts {
+    delete = "15m"
+  }
+
   depends_on = [
     module.eks,
     module.eks.cluster_addons

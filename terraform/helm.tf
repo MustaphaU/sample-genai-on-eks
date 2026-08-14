@@ -11,26 +11,43 @@ locals {
       "\"type\": \"prometheus\"", "\"type\": \"grafana-amazonprometheus-datasource\""),
       "\"uid\": \"prometheus\"", "\"uid\": \"${local.amp_datasource_name}\""
     )
-    ray_default = replace(replace(
+    # Ray 2.53 exports reference the datasource through a hidden dashboard template variable,
+    # "datasource": "${datasource}", rather than the inline {"type": "prometheus", "uid":
+    # "prometheus"} object that Ray 2.49 emitted. The old two-step replace() matched nothing in a
+    # fresh export, which Terraform reports as success while every panel renders blank.
+    #
+    # The template variable cannot resolve on its own either: it is declared with
+    # "query": "prometheus", so it only lists datasources whose type is "prometheus", and AMP's
+    # type is "grafana-amazonprometheus-datasource". It is also "hide": 2, so participants cannot
+    # select one manually.
+    #
+    # Substituting the datasource object directly removes the dependency on variable resolution.
+    # $${datasource} escapes Terraform interpolation so the literal ${datasource} is matched.
+    ray_default = replace(
       file("${path.module}/grafana-dashboards/ray-default-grafana-dashboard.json"),
-      "\"type\": \"prometheus\"", "\"type\": \"grafana-amazonprometheus-datasource\""),
-      "\"uid\": \"prometheus\"", "\"uid\": \"${local.amp_datasource_name}\""
+      "\"datasource\": \"$${datasource}\"",
+      "\"datasource\": { \"type\": \"grafana-amazonprometheus-datasource\", \"uid\": \"${local.amp_datasource_name}\" }"
     )
-    ray_serve = replace(replace(
+    ray_serve = replace(
       file("${path.module}/grafana-dashboards/ray-serve-grafana-dashboard.json"),
-      "\"type\": \"prometheus\"", "\"type\": \"grafana-amazonprometheus-datasource\""),
-      "\"uid\": \"prometheus\"", "\"uid\": \"${local.amp_datasource_name}\""
+      "\"datasource\": \"$${datasource}\"",
+      "\"datasource\": { \"type\": \"grafana-amazonprometheus-datasource\", \"uid\": \"${local.amp_datasource_name}\" }"
     )
-    ray_serve_deployment = replace(replace(
+    ray_serve_deployment = replace(
       file("${path.module}/grafana-dashboards/ray-serve-deployment-grafana-dashboard.json"),
-      "\"type\": \"prometheus\"", "\"type\": \"grafana-amazonprometheus-datasource\""),
-      "\"uid\": \"prometheus\"", "\"uid\": \"${local.amp_datasource_name}\""
+      "\"datasource\": \"$${datasource}\"",
+      "\"datasource\": { \"type\": \"grafana-amazonprometheus-datasource\", \"uid\": \"${local.amp_datasource_name}\" }"
     )
     dcgm = replace(replace(
       file("${path.module}/grafana-dashboards/dcgm-grafana-dashboard.json"),
       "\"type\": \"prometheus\"", "\"type\": \"grafana-amazonprometheus-datasource\""),
       "\"uid\": \"prometheus\"", "\"uid\": \"${local.amp_datasource_name}\""
     )
+    # Hand-authored, so it deliberately declares no datasource on any panel. Grafana resolves
+    # those to the default datasource, and the AMP datasource is configured with isDefault: true
+    # above. That avoids the rewrite fragility entirely rather than mitigating it, which is the
+    # same approach vllm-ray-dashboard.json already takes.
+    ray_inference_overview = file("${path.module}/grafana-dashboards/ray-serve-inference-overview.json")
   }
 }
 
@@ -335,6 +352,25 @@ resource "kubectl_manifest" "ray_serve_deployment_grafana_dashboard_config" {
   YAML
 }
 
+resource "kubectl_manifest" "ray_inference_overview_dashboard_config" {
+  depends_on = [
+    module.eks,
+    module.eks.cluster_addons,
+    helm_release.kube_prometheus_stack
+  ]
+
+  server_side_apply = true
+  yaml_body         = <<-YAML
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: ray-grafana-inference-overview-dashboard-config
+      namespace: monitoring
+    data:
+      ray-serve-inference-overview.json: ${jsonencode(local.dashboards.ray_inference_overview)}
+  YAML
+}
+
 resource "kubectl_manifest" "dcgm_grafana_dashboard_config" {
   depends_on = [
     module.eks,
@@ -566,6 +602,31 @@ resource "kubectl_manifest" "ray_serve_deployment_grafana_dashboard" {
       configMapRef:
         name: ray-grafana-serve-deployment-dashboard-config
         key: ray-serve-deployment-grafana-dashboard.json
+  YAML
+}
+
+resource "kubectl_manifest" "ray_inference_overview_dashboard" {
+  depends_on = [
+    kubectl_manifest.external_grafana,
+    kubectl_manifest.ray_inference_overview_dashboard_config
+  ]
+
+  server_side_apply = true
+  yaml_body         = <<-YAML
+    apiVersion: grafana.integreatly.org/v1beta1
+    kind: GrafanaDashboard
+    metadata:
+      name: ray-grafana-inference-overview-dashboard
+      namespace: monitoring
+      labels:
+        dashboards: "external-grafana"
+    spec:
+      instanceSelector:
+        matchLabels:
+          dashboards: external-grafana
+      configMapRef:
+        name: ray-grafana-inference-overview-dashboard-config
+        key: ray-serve-inference-overview.json
   YAML
 }
 
