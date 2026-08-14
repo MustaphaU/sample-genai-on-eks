@@ -1,0 +1,344 @@
+{
+  "uid": "ray-serve-inference-overview",
+  "title": "Ray Serve Inference Overview",
+  "tags": ["ray", "vllm", "inference"],
+  "timezone": "browser",
+  "schemaVersion": 42,
+  "editable": true,
+  "graphTooltip": 0,
+  "time": { "from": "now-30m", "to": "now" },
+  "refresh": "10s",
+  "templating": { "list": [] },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "User experience: what the caller feels",
+      "collapsed": false,
+      "panels": [],
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Request rate",
+      "description": "Successful requests per second completed by the Ray Serve deployment.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "range": true,
+          "expr": "sum(rate(ray_serve_deployment_request_counter_total{application=\"mistral\"}[2m]))",
+          "legendFormat": "requests/sec"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Error rate",
+      "description": "Exceptions raised while processing requests. A flat zero line is healthy. The 'or vector(0)' keeps the panel at zero rather than showing No Data, because a Prometheus counter that has never incremented does not exist as a series.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "range": true,
+          "expr": "sum(rate(ray_serve_deployment_error_counter_total{application=\"mistral\"}[2m])) or vector(0)",
+          "legendFormat": "errors/sec"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Time to first token",
+      "description": "How long the caller waits before any output appears. Includes time spent queued behind other requests, so this rises sharply under concurrency even though the model itself has not slowed down. Compare with inter-token latency to the right.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 9 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "range": true,
+          "expr": "histogram_quantile(0.95, sum(rate(ray_vllm_time_to_first_token_seconds_bucket[2m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "B",
+          "editorMode": "code",
+          "range": true,
+          "expr": "histogram_quantile(0.50, sum(rate(ray_vllm_time_to_first_token_seconds_bucket[2m])) by (le))",
+          "legendFormat": "p50"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Inter-token latency",
+      "description": "The gap between successive streamed tokens once generation has started. Stays low and steady even when time to first token is high, which is why total request duration is a poor measure of how a response feels.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 9 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "range": true,
+          "expr": "histogram_quantile(0.95, sum(rate(ray_vllm_inter_token_latency_seconds_bucket[2m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "B",
+          "editorMode": "code",
+          "range": true,
+          "expr": "histogram_quantile(0.50, sum(rate(ray_vllm_inter_token_latency_seconds_bucket[2m])) by (le))",
+          "legendFormat": "p50"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "End-to-end request latency",
+      "description": "Total time Ray Serve spent processing each request, excluding router queue wait.",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 17 },
+      "fieldConfig": { "defaults": { "unit": "ms" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "range": true,
+          "expr": "histogram_quantile(0.50, sum(rate(ray_serve_deployment_processing_latency_ms_bucket{application=\"mistral\"}[2m])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "editorMode": "code",
+          "range": true,
+          "expr": "histogram_quantile(0.95, sum(rate(ray_serve_deployment_processing_latency_ms_bucket{application=\"mistral\"}[2m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "C",
+          "editorMode": "code",
+          "range": true,
+          "expr": "histogram_quantile(0.99, sum(rate(ray_serve_deployment_processing_latency_ms_bucket{application=\"mistral\"}[2m])) by (le))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "row",
+      "title": "Queueing and concurrency: why it is that fast",
+      "collapsed": false,
+      "panels": [],
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 25 }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Requests in flight vs configured limits",
+      "description": "Counts of in-flight requests at two stages inside a single replica, not counts of pods. 'Serve to replica' is how many requests Ray Serve has handed to the replica; it cannot exceed max_ongoing_requests (5). 'Engine batch' is how many vLLM is actually decoding; it cannot exceed MAX_NUM_SEQS (4). The gap between the lines is requests waiting inside the replica for a batch slot. Dashed lines: 2 = target_ongoing_requests, the autoscaler's desired average; 4 = MAX_NUM_SEQS; 5 = max_ongoing_requests. When the actual value sits above 2, the autoscaler concludes it needs another replica.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 26 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "thresholdsStyle": { "mode": "dashed" } },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "text", "value": 2 },
+              { "color": "text", "value": 4 },
+              { "color": "text", "value": 5 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "range": true,
+          "expr": "sum(ray_serve_replica_processing_queries{application=\"mistral\"})",
+          "legendFormat": "Serve to replica"
+        },
+        {
+          "refId": "B",
+          "editorMode": "code",
+          "range": true,
+          "expr": "sum(ray_vllm_num_requests_running)",
+          "legendFormat": "Engine batch"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Router queue depth",
+      "description": "Requests waiting at the Ray Serve router because the replica is already at max_ongoing_requests. This is backpressure: the system is accepting work faster than it can start it.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 26 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "range": true,
+          "expr": "sum(ray_serve_deployment_queued_queries{application=\"mistral\"})",
+          "legendFormat": "queued"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Unsatisfiable GPU demand",
+      "description": "GPUs the Ray autoscaler has requested but cannot obtain. A sustained value of 1 means the autoscaler wants another replica and the cluster will never provide one, because the RayService pins workerGroupSpecs to a single worker and the GPU NodePool is capped at one GPU.",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 34 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "range": true,
+          "expr": "sum(autoscaler_pending_resources{resource=\"GPU\"}) or vector(0)",
+          "legendFormat": "pending GPUs"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Healthy replicas",
+      "description": "Running replicas of the deployment. Flat at 1 throughout this workshop by design.",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 34 },
+      "fieldConfig": {
+        "defaults": { "unit": "short", "min": 0 },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "range": true,
+          "expr": "sum(ray_serve_deployment_replica_healthy{application=\"mistral\"})",
+          "legendFormat": "replicas"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "KV cache utilization",
+      "description": "How much of the pre-allocated KV cache is actually holding sequences. Read alongside GPU memory used: memory stays near 90% constantly because vLLM reserves it at startup, while this shows how much of that reservation is doing work.",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 34 },
+      "fieldConfig": {
+        "defaults": { "unit": "percent", "min": 0, "max": 100 },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "range": true,
+          "expr": "max(ray_vllm_kv_cache_usage_perc) * 100",
+          "legendFormat": "KV cache in use"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "type": "row",
+      "title": "GPU: is the hardware the constraint",
+      "collapsed": false,
+      "panels": [],
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 42 }
+    },
+    {
+      "id": 14,
+      "type": "timeseries",
+      "title": "Logical GPU allocated",
+      "description": "Ray's own accounting, driven by the num_gpus each actor requests. Allocated pins at 1 of 1 the moment the replica starts, whether or not any inference is happening. Compare with physical utilization to the right: Ray having reserved the GPU and the GPU being busy are different claims.",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 43 },
+      "fieldConfig": {
+        "defaults": { "unit": "short", "min": 0 },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "range": true,
+          "expr": "sum(ray_resources{Name=\"GPU\",State=\"USED\"})",
+          "legendFormat": "Allocated"
+        },
+        {
+          "refId": "B",
+          "editorMode": "code",
+          "range": true,
+          "expr": "sum(ray_resources{Name=\"GPU\"})",
+          "legendFormat": "Total"
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "type": "timeseries",
+      "title": "Physical GPU utilization",
+      "description": "Actual hardware busy percentage, sampled by Ray. Drops to near zero when idle even though Ray still has the GPU logically allocated.",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 43 },
+      "fieldConfig": {
+        "defaults": { "unit": "percent", "min": 0, "max": 100 },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "range": true,
+          "expr": "max(ray_node_gpus_utilization) by (GpuIndex)",
+          "legendFormat": "gpu {{GpuIndex}}"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "type": "timeseries",
+      "title": "GPU memory used",
+      "description": "Framebuffer memory in use. Sits near 90% constantly because GPU_MEMORY_UTILIZATION is 0.9, so vLLM reserves that share for its KV cache at startup regardless of load. High here does not mean out of memory; see KV cache utilization above for how much is actually occupied.",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 43 },
+      "fieldConfig": {
+        "defaults": { "unit": "percent", "min": 0, "max": 100 },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "range": true,
+          "expr": "sum(ray_node_gram_used) / (sum(ray_node_gram_used) + sum(ray_node_gram_available)) * 100",
+          "legendFormat": "GPU memory"
+        }
+      ]
+    }
+  ]
+}

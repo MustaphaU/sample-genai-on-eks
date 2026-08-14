@@ -11,7 +11,7 @@ variable "cluster_name" {
 variable "cluster_version" {
   description = "Kubernetes version for the EKS cluster"
   type        = string
-  default     = "1.34"
+  default     = "1.36"
 }
 
 variable "region" {
@@ -59,13 +59,31 @@ variable "model_prefix" {
 variable "gpu_instance_types" {
   description = "Instance types for GPU nodes (ordered by preference for ODCR failover)"
   type        = list(string)
-  default     = ["g6e.2xlarge", "g6e.4xlarge", "g6e.8xlarge"]
+  default     = ["g6e.xlarge", "g6e.2xlarge", "g6e.4xlarge", "g6e.8xlarge"]
 }
 
 variable "ingress_inbound_cidrs" {
   description = "Allowed inbound CIDRs for Ingress resources"
   type        = list(string)
   default     = ["0.0.0.0/0"]
+}
+
+variable "enable_valkey" {
+  description = "Provision an ElastiCache Serverless Valkey cache for LMCache remote cache sharing"
+  type        = bool
+  default     = true
+}
+
+variable "enable_rag" {
+  description = "Provision RAG storage and workload identity resources; disabling after use deletes stored documents and vectors"
+  type        = bool
+  default     = true
+}
+
+variable "enable_strands" {
+  description = "Provision the Strands agent ECR repository; disabling after use deletes its container images"
+  type        = bool
+  default     = true
 }
 
 variable "grafana_admin_password" {
